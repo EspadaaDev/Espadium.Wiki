@@ -1,3 +1,4 @@
+using Espadium.Wiki.Domain.Entities;
 using Espadium.Wiki.Infrastructure.Identity;
 using Espadium.Wiki.Infrastructure.Models;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +14,12 @@ namespace Espadium.Wiki.Infrastructure
         }
 
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+        public DbSet<Team> Teams => Set<Team>();
+        public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+        public DbSet<Space> Spaces => Set<Space>();
+        public DbSet<SpaceMember> SpaceMembers => Set<SpaceMember>();
+        public DbSet<Page> Pages => Set<Page>();
+        public DbSet<PageRevision> PageRevisions => Set<PageRevision>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +43,56 @@ namespace Espadium.Wiki.Infrastructure
                     .WithMany()
                     .HasForeignKey(rt => rt.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Team>(b =>
+            {
+                b.HasKey(t => t.Id);
+                b.Property(t => t.Name).IsRequired().HasMaxLength(200);
+                b.Property(t => t.Description).HasMaxLength(1000);
+                b.HasMany(t => t.Members).WithOne(tm => tm.Team).HasForeignKey(tm => tm.TeamId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<TeamMember>(b =>
+            {
+                b.HasKey(tm => new { tm.TeamId, tm.UserId });
+                b.Property(tm => tm.Role).IsRequired().HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<Space>(b =>
+            {
+                b.HasKey(s => s.Id);
+                b.Property(s => s.Key).IsRequired().HasMaxLength(100);
+                b.Property(s => s.Name).IsRequired().HasMaxLength(200);
+                b.Property(s => s.Description).HasMaxLength(1000);
+                b.HasIndex(s => s.Key).IsUnique();
+                b.HasMany(s => s.Members).WithOne(sm => sm.Space).HasForeignKey(sm => sm.SpaceId).OnDelete(DeleteBehavior.Cascade);
+                b.HasMany(s => s.Pages).WithOne(p => p.Space).HasForeignKey(p => p.SpaceId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SpaceMember>(b =>
+            {
+                b.HasKey(sm => new { sm.SpaceId, sm.PrincipalType, sm.PrincipalId });
+                b.Property(sm => sm.PrincipalType).HasConversion<string>();
+                b.Property(sm => sm.Role).HasConversion<string>();
+            });
+
+            modelBuilder.Entity<Page>(b =>
+            {
+                b.HasKey(p => p.Id);
+                b.Property(p => p.Slug).IsRequired().HasMaxLength(200);
+                b.Property(p => p.Title).IsRequired().HasMaxLength(500);
+                b.Property(p => p.Status).HasConversion<string>();
+                b.HasIndex(p => new { p.SpaceId, p.Slug }).IsUnique();
+                b.HasOne(p => p.Parent).WithMany(p => p.Children).HasForeignKey(p => p.ParentId).OnDelete(DeleteBehavior.Restrict);
+                b.HasMany(p => p.Revisions).WithOne(pr => pr.Page).HasForeignKey(pr => pr.PageId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PageRevision>(b =>
+            {
+                b.HasKey(pr => pr.Id);
+                b.Property(pr => pr.SnapshotJson).IsRequired();
+                b.HasIndex(pr => new { pr.PageId, pr.RevisionNo }).IsUnique();
             });
         }
     }

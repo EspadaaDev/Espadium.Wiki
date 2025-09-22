@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Espadium.Wiki.Api.Configuration.Options;
 using Espadium.Wiki.Infrastructure;
 using Espadium.Wiki.Infrastructure.Identity;
+using Espadium.Wiki.Application.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -152,6 +153,10 @@ namespace Espadium.Wiki.Api
                 });
             });
 
+            builder.Services.AddScoped<TeamService>();
+            builder.Services.AddScoped<SpaceService>();
+            builder.Services.AddScoped<PageService>();
+
             WebApplication app;
             try
             {
@@ -300,6 +305,56 @@ namespace Espadium.Wiki.Api
                 var result = await userManager.ConfirmEmailAsync(user, code);
                 return result.Succeeded ? Results.Ok(new { message = "ok" }) : Results.BadRequest(result.Errors);
             });
+
+            var teams = app.MapGroup("/teams").RequireAuthorization().WithOpenApi().WithTags("Teams");
+            teams.MapGet("/", async (TeamService service) => await service.GetTeamsAsync());
+            teams.MapGet("/{id:guid}", async (TeamService service, Guid id) => 
+                await service.GetTeamAsync(id) is { } team ? Results.Ok(team) : Results.NotFound());
+            teams.MapPost("/", async (TeamService service, HttpContext http, Espadium.Wiki.Application.DTOs.CreateTeamRequest req) =>
+            {
+                var userId = Guid.Parse(http.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var team = await service.CreateTeamAsync(req, userId);
+                return Results.Created($"/teams/{team.Id}", team);
+            });
+            teams.MapPut("/{id:guid}", async (TeamService service, Guid id, Espadium.Wiki.Application.DTOs.UpdateTeamRequest req) =>
+                await service.UpdateTeamAsync(id, req) is { } team ? Results.Ok(team) : Results.NotFound());
+            teams.MapDelete("/{id:guid}", async (TeamService service, Guid id) =>
+                await service.DeleteTeamAsync(id) ? Results.NoContent() : Results.NotFound());
+
+            var spaces = app.MapGroup("/spaces").RequireAuthorization().WithOpenApi().WithTags("Spaces");
+            spaces.MapGet("/", async (SpaceService service) => await service.GetSpacesAsync());
+            spaces.MapGet("/{id:guid}", async (SpaceService service, Guid id) =>
+                await service.GetSpaceAsync(id) is { } space ? Results.Ok(space) : Results.NotFound());
+            spaces.MapPost("/", async (SpaceService service, HttpContext http, Espadium.Wiki.Application.DTOs.CreateSpaceRequest req) =>
+            {
+                var userId = Guid.Parse(http.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var space = await service.CreateSpaceAsync(req, userId);
+                return Results.Created($"/spaces/{space.Id}", space);
+            });
+            spaces.MapPut("/{id:guid}", async (SpaceService service, Guid id, Espadium.Wiki.Application.DTOs.UpdateSpaceRequest req) =>
+                await service.UpdateSpaceAsync(id, req) is { } space ? Results.Ok(space) : Results.NotFound());
+            spaces.MapDelete("/{id:guid}", async (SpaceService service, Guid id) =>
+                await service.DeleteSpaceAsync(id) ? Results.NoContent() : Results.NotFound());
+            spaces.MapPost("/{id:guid}/members", async (SpaceService service, Guid id, Espadium.Wiki.Application.DTOs.AddSpaceMemberRequest req) =>
+                await service.AddMemberAsync(id, req) ? Results.Ok() : Results.Conflict());
+
+            var pages = app.MapGroup("/pages").RequireAuthorization().WithOpenApi().WithTags("Pages");
+            pages.MapGet("/", async (PageService service, Guid? spaceId) => await service.GetPagesAsync(spaceId));
+            pages.MapGet("/{id:guid}", async (PageService service, Guid id) =>
+                await service.GetPageAsync(id) is { } page ? Results.Ok(page) : Results.NotFound());
+            pages.MapPost("/", async (PageService service, HttpContext http, Espadium.Wiki.Application.DTOs.CreatePageRequest req) =>
+            {
+                var userId = Guid.Parse(http.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var page = await service.CreatePageAsync(req, userId);
+                return Results.Created($"/pages/{page.Id}", page);
+            });
+            pages.MapPut("/{id:guid}", async (PageService service, HttpContext http, Guid id, Espadium.Wiki.Application.DTOs.UpdatePageRequest req) =>
+            {
+                var userId = Guid.Parse(http.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                return await service.UpdatePageAsync(id, req, userId) is { } page ? Results.Ok(page) : Results.NotFound();
+            });
+            pages.MapDelete("/{id:guid}", async (PageService service, Guid id) =>
+                await service.DeletePageAsync(id) ? Results.NoContent() : Results.NotFound());
 
             if (app.Environment.IsDevelopment())
             {
