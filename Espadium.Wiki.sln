@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36511.14 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Espadium.Wiki.Api", "Espadium.Wiki.Api\Espadium.Wiki.Api.csproj", "{E335FE9A-CFC6-4D18-B594-7C8A6BF430EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Espadium.Wiki.Application", "Espadium.Wiki.Application\Espadium.Wiki.Application.csproj", "{79607007-3FEF-4292-8109-A0721D13D6BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Espadium.Wiki.Domain", "Espadium.Wiki.Domain\Espadium.Wiki.Domain.csproj", "{D92FAF9B-F2D7-4BFB-B48C-653AF51B31AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Espadium.Wiki.Infrastructure", "Espadium.Wiki.Infrastructure\Espadium.Wiki.Infrastructure.csproj", "{FBE49FD6-3626-4FC2-B125-A55C882F7F2F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Espadium.Wiki.Tests", "Espadium.Wiki.Tests\Espadium.Wiki.Tests.csproj", "{8B5CB1EE-FBFB-4B94-A7DE-306C08EAD46D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E335FE9A-CFC6-4D18-B594-7C8A6BF430EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E335FE9A-CFC6-4D18-B594-7C8A6BF430EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E335FE9A-CFC6-4D18-B594-7C8A6BF430EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E335FE9A-CFC6-4D18-B594-7C8A6BF430EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79607007-3FEF-4292-8109-A0721D13D6BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79607007-3FEF-4292-8109-A0721D13D6BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79607007-3FEF-4292-8109-A0721D13D6BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79607007-3FEF-4292-8109-A0721D13D6BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D92FAF9B-F2D7-4BFB-B48C-653AF51B31AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D92FAF9B-F2D7-4BFB-B48C-653AF51B31AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D92FAF9B-F2D7-4BFB-B48C-653AF51B31AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D92FAF9B-F2D7-4BFB-B48C-653AF51B31AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBE49FD6-3626-4FC2-B125-A55C882F7F2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBE49FD6-3626-4FC2-B125-A55C882F7F2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBE49FD6-3626-4FC2-B125-A55C882F7F2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBE49FD6-3626-4FC2-B125-A55C882F7F2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B5CB1EE-FBFB-4B94-A7DE-306C08EAD46D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B5CB1EE-FBFB-4B94-A7DE-306C08EAD46D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B5CB1EE-FBFB-4B94-A7DE-306C08EAD46D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B5CB1EE-FBFB-4B94-A7DE-306C08EAD46D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E5CF15C0-8B70-4B8A-88E8-CB3A7FADEE85}
+	EndGlobalSection
+EndGlobal

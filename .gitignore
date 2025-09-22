@@ -1,0 +1,142 @@
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# =========================
+# IDE / Tools
+# =========================
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+_ReSharper*/
+*.DotSettings.user
+
+# VS Code (разрешим общие настройки)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# =========================
+# .NET build artifacts
+# =========================
+bin/
+obj/
+out/
+artifacts/
+*.cache/
+*.dbmdl
+*.aps
+*.mdb
+*.ilk
+*.pdb
+*.ipch
+*.obj
+*.tlog
+*.log
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+.nuget/NuGet.Config
+!**/packages.lock.json
+
+# Tests / Coverage / Benchmarks
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+BenchmarkDotNet.Artifacts/
+
+# Logs
+logs/
+*.log
+
+# =========================
+# Config / Secrets
+# =========================
+# appsettings: держим prod/dev, но скрываем локальные/секретные вариации
+**/appsettings.*.Local.json
+**/appsettings.*.local.json
+**/appsettings.*.Secrets.json
+**/appsettings.*.secrets.json
+
+# Сертификаты и ключи
+*.pfx
+*.p12
+*.key
+*.cer
+*.crt
+*.pem
+
+# =========================
+# Docker / Compose
+# =========================
+.env
+.env.*
+!.env.example
+volumes/
+tmp/
+temp/
+
+# Локальные каталоги данных (если монтируешь внутрь репо)
+minio-data/
+pgdata/
+redis-data/
+data/
+_data/
+docker/**/data/
+
+# Nginx (если есть локальная папка с логами)
+nginx/logs/
+nginx/conf.d/*.tmp
+
+# =========================
+# Frontend (Node/Next.js)
+# =========================
+**/node_modules/
+**/.pnp
+**/.pnp.*
+**/.cache/
+**/dist/
+**/build/
+**/.next/
+**/.next/cache/
+**/.turbo/
+**/.vercel/
+**/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# не игнорируем lock-файлы менеджеров пакетов:
+!**/package-lock.json
+!**/yarn.lock
+!**/pnpm-lock.yaml
+
+# =========================
+# Playwright / Reports
+# =========================
+**/playwright-report/
+**/blob-report/
+**/test-results/
+
+# =========================
+# Uploads / Generated
+# =========================
+uploads/
+exports/
+previews/
