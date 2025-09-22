@@ -16,6 +16,11 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity.Data;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
+using Espadium.Wiki.Application.Abstractions.Caching;
+using Espadium.Wiki.Infrastructure.Caching;
 
 namespace Espadium.Wiki.Api
 {
@@ -64,13 +69,21 @@ namespace Espadium.Wiki.Api
             builder.Services.AddDbContext<WikiDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
+            builder.Services.AddStackExchangeRedisCache(opt =>
+            {
+                opt.Configuration = builder.Configuration.GetSection("Redis").GetValue<string>("Configuration");
+                opt.InstanceName = "ew:";
+            });
+            builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+                ConnectionMultiplexer.Connect(builder.Configuration.GetSection("Redis").GetValue<string>("Configuration")!));
+
             builder.Services
                 .AddIdentityCore<User>(o =>
                 {
                     o.User.RequireUniqueEmail = true;
                     o.SignIn.RequireConfirmedEmail = false;
                 })
-                .AddRoles<Role>()
+                .AddRoles<Espadium.Wiki.Infrastructure.Identity.Role>()
                 .AddEntityFrameworkStores<WikiDbContext>()
                 .AddDefaultTokenProviders();
 
@@ -164,6 +177,11 @@ namespace Espadium.Wiki.Api
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IDateTimeProvider>(_ => new SystemClock());
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IEmailSender, Espadium.Wiki.Infrastructure.Services.EmailSender>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IFileStorage, Espadium.Wiki.Infrastructure.Services.S3Storage>();
+            builder.Services.AddSingleton<ICacheService, CacheService>();
+            builder.Services.AddSingleton<IPageCache, PageCache>();
+            builder.Services.AddSingleton<IPageTreeCache, PageTreeCache>();
+            builder.Services.AddSingleton<ISpacePermCache, SpacePermCache>();
+            builder.Services.AddSingleton<ISettingsCache, SettingsCache>();
 
             WebApplication app;
             try
@@ -188,6 +206,43 @@ namespace Espadium.Wiki.Api
             app.UseCors();
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.Use(async (context, next) =>
+            {
+                var multiplexer = context.RequestServices.GetRequiredService<IConnectionMultiplexer>();
+                var db = multiplexer.GetDatabase();
+                string window = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmm");
+                string? userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    string key = $"ratelimit:user:{userId}:{window}";
+                    var count = await db.StringIncrementAsync(key);
+                    if (count == 1)
+                        await db.KeyExpireAsync(key, TimeSpan.FromMinutes(1));
+                    if (count > 120)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                        await context.Response.WriteAsync("rate limit exceeded");
+                        return;
+                    }
+                }
+                var ip = context.Connection.RemoteIpAddress?.ToString();
+                if (!string.IsNullOrEmpty(ip))
+                {
+                    string keyIp = $"ratelimit:ip:{ip}:{window}";
+                    var countIp = await db.StringIncrementAsync(keyIp);
+                    if (countIp == 1)
+                        await db.KeyExpireAsync(keyIp, TimeSpan.FromMinutes(1));
+                    if (countIp > 60)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                        await context.Response.WriteAsync("rate limit exceeded");
+                        return;
+                    }
+                }
+                await next();
+            });
+
             app.UseRateLimiter();
 
             app.MapGet("/health/liveness", () => Results.Json(new { status = "ok" }));
@@ -350,19 +405,34 @@ namespace Espadium.Wiki.Api
             pages.MapGet("/", async (PageService service, Guid? spaceId) => await service.GetPagesAsync(spaceId));
             pages.MapGet("/{id:guid}", async (PageService service, Guid id) =>
                 await service.GetPageAsync(id) is { } page ? Results.Ok(page) : Results.NotFound());
-            pages.MapPost("/", async (PageService service, HttpContext http, Espadium.Wiki.Application.DTOs.CreatePageRequest req) =>
+            pages.MapPost("/", async (PageService service, HttpContext http, Espadium.Wiki.Application.DTOs.CreatePageRequest req, IPageTreeCache treeCache) =>
             {
                 var userId = Guid.Parse(http.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
                 var page = await service.CreatePageAsync(req, userId);
+                await treeCache.InvalidateTreeAsync(page.SpaceId);
                 return Results.Created($"/pages/{page.Id}", page);
             });
-            pages.MapPut("/{id:guid}", async (PageService service, HttpContext http, Guid id, Espadium.Wiki.Application.DTOs.UpdatePageRequest req) =>
+            pages.MapPut("/{id:guid}", async (PageService service, HttpContext http, Guid id, Espadium.Wiki.Application.DTOs.UpdatePageRequest req, IPageCache pageCache, IPageTreeCache treeCache) =>
             {
                 var userId = Guid.Parse(http.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-                return await service.UpdatePageAsync(id, req, userId) is { } page ? Results.Ok(page) : Results.NotFound();
+                var updated = await service.UpdatePageAsync(id, req, userId);
+                if (updated is null) return Results.NotFound();
+                await pageCache.InvalidatePageAsync(id);
+                await treeCache.InvalidateTreeAsync(updated.SpaceId);
+                return Results.Ok(updated);
             });
-            pages.MapDelete("/{id:guid}", async (PageService service, Guid id) =>
-                await service.DeletePageAsync(id) ? Results.NoContent() : Results.NotFound());
+            pages.MapDelete("/{id:guid}", async (PageService service, Guid id, IPageCache pageCache, IPageTreeCache treeCache) =>
+            {
+                var existed = await service.GetPageAsync(id);
+                var ok = await service.DeletePageAsync(id);
+                if (!ok) return Results.NotFound();
+                await pageCache.InvalidatePageAsync(id);
+                if (existed is not null)
+                {
+                    await treeCache.InvalidateTreeAsync(existed.SpaceId);
+                }
+                return Results.NoContent();
+            });
 
             if (app.Environment.IsDevelopment())
             {
