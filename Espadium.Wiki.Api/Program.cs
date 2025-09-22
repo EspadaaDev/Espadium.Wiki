@@ -1,5 +1,6 @@
 
 using Microsoft.AspNetCore.RateLimiting;
+using Espadium.Wiki.Api.Configuration.Options;
 using Serilog;
 using Serilog.Events;
 using System.Threading.RateLimiting;
@@ -30,6 +31,44 @@ namespace Espadium.Wiki.Api
             builder.Services.AddAuthorization();
             builder.Services.AddOpenApi();
 
+            builder.Services
+                .AddOptions<JwtOptions>()
+                .Bind(builder.Configuration.GetSection("Jwt"))
+                .ValidateDataAnnotations()
+                .Validate(o => !string.IsNullOrWhiteSpace(o.Key) && o.Key.Length >= 16, "Jwt:Key must be at least 16 characters")
+                .ValidateOnStart();
+
+            builder.Services
+                .AddOptions<S3Options>()
+                .Bind(builder.Configuration.GetSection("S3"))
+                .ValidateDataAnnotations()
+                .Validate(o => Uri.TryCreate(o.Endpoint, UriKind.Absolute, out _), "S3:Endpoint must be a valid absolute URI")
+                .ValidateOnStart();
+
+            builder.Services
+                .AddOptions<EmailOptions>()
+                .Bind(builder.Configuration.GetSection("Email"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            builder.Services
+                .AddOptions<StorageLimitsOptions>()
+                .Bind(builder.Configuration.GetSection("StorageLimits"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            builder.Services
+                .AddOptions<ContentLimitsOptions>()
+                .Bind(builder.Configuration.GetSection("ContentLimits"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            builder.Services
+                .AddOptions<SecurityOptions>()
+                .Bind(builder.Configuration.GetSection("Security"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
@@ -55,7 +94,16 @@ namespace Espadium.Wiki.Api
                 });
             });
 
-            var app = builder.Build();
+            WebApplication app;
+            try
+            {
+                app = builder.Build();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Failed to start due to configuration validation errors");
+                throw;
+            }
 
             if (app.Environment.IsDevelopment())
             {
