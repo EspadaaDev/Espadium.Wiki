@@ -4,9 +4,9 @@ description: |
 
   GENERAL
   - Do NOT reinstall NuGet/npm packages or change existing *.csproj / package.json unless explicitly asked.
-  - Edit ONLY the files explicitly mentioned in the task; when creating new files, list their relative paths first.
+  - Edit ONLY the files explicitly mentioned; when creating new files, list their relative paths first.
   - Prefer small, focused diffs. Before sweeping or multi-file refactors, ASK for confirmation.
-  - No AOT, no heavy scaffolding, no generated large mock data, no binary assets committed.
+  - No AOT, no heavy scaffolding, no large mock data, no binary assets committed.
 
   ARCHITECTURE BASELINE (assume already chosen)
   - Backend: .NET 9 Minimal APIs, ASP.NET Identity + JWT, EF Core (PostgreSQL), Redis (cache + rate limiting), Hangfire (Postgres), Serilog.
@@ -25,7 +25,7 @@ description: |
 
   NAMING / STRUCTURE (must keep)
   - Solution/projects: Espadium.Wiki.Api / .Application / .Domain / .Infrastructure / .Tests
-  - Frontend folder: espadium-wiki-web (npm package name: "espadium-wiki-web")
+  - Frontend folder: **Espadium.Wiki.Web** (npm package name should remain lowercase: "espadium-wiki-web")
 
   OUTPUT FORMAT
   - When responding, list: (1) files to change/create, (2) brief rationale, (3) the minimal code diff or full file content if small.
@@ -37,7 +37,7 @@ globs:
   - "Espadium.Wiki.Domain/**"
   - "Espadium.Wiki.Infrastructure/**"
   - "Espadium.Wiki.Tests/**"
-  - "espadium-wiki-web/**"
+  - "Espadium.Wiki.Web/**"
   - ".editorconfig"
   - "README.md"
   - "docker-compose.yml"
