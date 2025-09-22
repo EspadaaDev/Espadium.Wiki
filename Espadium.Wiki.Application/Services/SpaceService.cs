@@ -1,29 +1,30 @@
+using Espadium.Wiki.Application.Abstractions;
+using Espadium.Wiki.Application.Abstractions.Repositories;
 using Espadium.Wiki.Application.DTOs;
 using Espadium.Wiki.Domain.Entities;
-using Espadium.Wiki.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace Espadium.Wiki.Application.Services
 {
     public class SpaceService
     {
-        private readonly WikiDbContext _context;
+        private readonly ISpaceRepository _spaces;
+        private readonly IDateTimeProvider _clock;
 
-        public SpaceService(WikiDbContext context)
+        public SpaceService(ISpaceRepository spaces, IDateTimeProvider clock)
         {
-            _context = context;
+            _spaces = spaces;
+            _clock = clock;
         }
 
         public async Task<List<SpaceDto>> GetSpacesAsync()
         {
-            return await _context.Spaces
-                .Select(s => new SpaceDto(s.Id, s.Key, s.Name, s.Description, s.CreatedBy, s.IsPrivate, s.CreatedAt))
-                .ToListAsync();
+            var list = await _spaces.ListAsync();
+            return list.Select(s => new SpaceDto(s.Id, s.Key, s.Name, s.Description, s.CreatedBy, s.IsPrivate, s.CreatedAt)).ToList();
         }
 
         public async Task<SpaceDto?> GetSpaceAsync(Guid id)
         {
-            var space = await _context.Spaces.FindAsync(id);
+            var space = await _spaces.GetAsync(id);
             return space == null ? null : new SpaceDto(space.Id, space.Key, space.Name, space.Description, space.CreatedBy, space.IsPrivate, space.CreatedAt);
         }
 
@@ -37,55 +38,43 @@ namespace Espadium.Wiki.Application.Services
                 Description = request.Description,
                 IsPrivate = request.IsPrivate,
                 CreatedBy = userId,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAt = _clock.UtcNow
             };
-
-            _context.Spaces.Add(space);
-            await _context.SaveChangesAsync();
+            await _spaces.AddAsync(space);
 
             return new SpaceDto(space.Id, space.Key, space.Name, space.Description, space.CreatedBy, space.IsPrivate, space.CreatedAt);
         }
 
         public async Task<SpaceDto?> UpdateSpaceAsync(Guid id, UpdateSpaceRequest request)
         {
-            var space = await _context.Spaces.FindAsync(id);
+            var space = await _spaces.GetAsync(id);
             if (space == null) return null;
 
             space.Name = request.Name;
             space.Description = request.Description;
             space.IsPrivate = request.IsPrivate;
-
-            await _context.SaveChangesAsync();
+            await _spaces.UpdateAsync(space);
             return new SpaceDto(space.Id, space.Key, space.Name, space.Description, space.CreatedBy, space.IsPrivate, space.CreatedAt);
         }
 
         public async Task<bool> DeleteSpaceAsync(Guid id)
         {
-            var space = await _context.Spaces.FindAsync(id);
+            var space = await _spaces.GetAsync(id);
             if (space == null) return false;
-
-            _context.Spaces.Remove(space);
-            await _context.SaveChangesAsync();
+            await _spaces.DeleteAsync(space);
             return true;
         }
 
         public async Task<bool> AddMemberAsync(Guid spaceId, AddSpaceMemberRequest request)
         {
-            var exists = await _context.SpaceMembers
-                .AnyAsync(sm => sm.SpaceId == spaceId && sm.PrincipalType == request.PrincipalType && sm.PrincipalId == request.PrincipalId);
-            
-            if (exists) return false;
-
-            var member = new SpaceMember
+            if (await _spaces.ExistsMemberAsync(spaceId, request.PrincipalType, request.PrincipalId)) return false;
+            await _spaces.AddMemberAsync(new SpaceMember
             {
                 SpaceId = spaceId,
                 PrincipalType = request.PrincipalType,
                 PrincipalId = request.PrincipalId,
                 Role = request.Role
-            };
-
-            _context.SpaceMembers.Add(member);
-            await _context.SaveChangesAsync();
+            });
             return true;
         }
     }

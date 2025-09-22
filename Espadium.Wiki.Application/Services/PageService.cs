@@ -1,33 +1,30 @@
+using Espadium.Wiki.Application.Abstractions;
+using Espadium.Wiki.Application.Abstractions.Repositories;
 using Espadium.Wiki.Application.DTOs;
 using Espadium.Wiki.Domain.Entities;
-using Espadium.Wiki.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace Espadium.Wiki.Application.Services
 {
     public class PageService
     {
-        private readonly WikiDbContext _context;
+        private readonly IPageRepository _pages;
+        private readonly IDateTimeProvider _clock;
 
-        public PageService(WikiDbContext context)
+        public PageService(IPageRepository pages, IDateTimeProvider clock)
         {
-            _context = context;
+            _pages = pages;
+            _clock = clock;
         }
 
         public async Task<List<PageDto>> GetPagesAsync(Guid? spaceId = null)
         {
-            var query = _context.Pages.AsQueryable();
-            if (spaceId.HasValue)
-                query = query.Where(p => p.SpaceId == spaceId.Value);
-
-            return await query
-                .Select(p => new PageDto(p.Id, p.SpaceId, p.ParentId, p.Slug, p.Title, p.Status, p.CreatedBy, p.UpdatedBy, p.CreatedAt, p.UpdatedAt))
-                .ToListAsync();
+            var list = await _pages.ListAsync(spaceId);
+            return list.Select(p => new PageDto(p.Id, p.SpaceId, p.ParentId, p.Slug, p.Title, p.Status, p.CreatedBy, p.UpdatedBy, p.CreatedAt, p.UpdatedAt)).ToList();
         }
 
         public async Task<PageDto?> GetPageAsync(Guid id)
         {
-            var page = await _context.Pages.FindAsync(id);
+            var page = await _pages.GetAsync(id);
             return page == null ? null : new PageDto(page.Id, page.SpaceId, page.ParentId, page.Slug, page.Title, page.Status, page.CreatedBy, page.UpdatedBy, page.CreatedAt, page.UpdatedAt);
         }
 
@@ -43,37 +40,32 @@ namespace Espadium.Wiki.Application.Services
                 Status = request.Status,
                 CreatedBy = userId,
                 UpdatedBy = userId,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow
+                CreatedAt = _clock.UtcNow,
+                UpdatedAt = _clock.UtcNow
             };
-
-            _context.Pages.Add(page);
-            await _context.SaveChangesAsync();
+            await _pages.AddAsync(page);
 
             return new PageDto(page.Id, page.SpaceId, page.ParentId, page.Slug, page.Title, page.Status, page.CreatedBy, page.UpdatedBy, page.CreatedAt, page.UpdatedAt);
         }
 
         public async Task<PageDto?> UpdatePageAsync(Guid id, UpdatePageRequest request, Guid userId)
         {
-            var page = await _context.Pages.FindAsync(id);
+            var page = await _pages.GetAsync(id);
             if (page == null) return null;
 
             page.Title = request.Title;
             page.Status = request.Status;
             page.UpdatedBy = userId;
-            page.UpdatedAt = DateTimeOffset.UtcNow;
-
-            await _context.SaveChangesAsync();
+            page.UpdatedAt = _clock.UtcNow;
+            await _pages.UpdateAsync(page);
             return new PageDto(page.Id, page.SpaceId, page.ParentId, page.Slug, page.Title, page.Status, page.CreatedBy, page.UpdatedBy, page.CreatedAt, page.UpdatedAt);
         }
 
         public async Task<bool> DeletePageAsync(Guid id)
         {
-            var page = await _context.Pages.FindAsync(id);
+            var page = await _pages.GetAsync(id);
             if (page == null) return false;
-
-            _context.Pages.Remove(page);
-            await _context.SaveChangesAsync();
+            await _pages.DeleteAsync(page);
             return true;
         }
     }

@@ -1,4 +1,4 @@
-using Espadium.Wiki.Application.Services;
+using Espadium.Wiki.Application.Abstractions;
 using Espadium.Wiki.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 

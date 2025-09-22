@@ -156,7 +156,14 @@ namespace Espadium.Wiki.Api
             builder.Services.AddScoped<TeamService>();
             builder.Services.AddScoped<SpaceService>();
             builder.Services.AddScoped<PageService>();
-            builder.Services.AddScoped<IPermissionService, PermissionService>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IPermissionService, Espadium.Wiki.Application.Services.PermissionService>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.ITeamRepository, Espadium.Wiki.Infrastructure.Repositories.EfTeamRepository>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.ISpaceRepository, Espadium.Wiki.Infrastructure.Repositories.EfSpaceRepository>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRepository>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRestrictionRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRestrictionRepository>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IDateTimeProvider>(_ => new SystemClock());
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IEmailSender, Espadium.Wiki.Infrastructure.Services.EmailSender>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IFileStorage, Espadium.Wiki.Infrastructure.Services.S3Storage>();
 
             WebApplication app;
             try
@@ -179,9 +186,9 @@ namespace Espadium.Wiki.Api
             app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
             app.UseCors();
-            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseRateLimiter();
 
             app.MapGet("/health/liveness", () => Results.Json(new { status = "ok" }));
             app.MapGet("/health/readiness", () => Results.Json(new { db = "pending", redis = "pending", s3 = "pending" }));

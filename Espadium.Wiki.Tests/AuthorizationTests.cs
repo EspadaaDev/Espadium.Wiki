@@ -3,6 +3,8 @@ using Espadium.Wiki.Domain.Entities;
 using Espadium.Wiki.Infrastructure;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Espadium.Wiki.Application.Abstractions.Repositories;
+using Espadium.Wiki.Infrastructure.Repositories;
 
 namespace Espadium.Wiki.Tests
 {
@@ -11,7 +13,7 @@ namespace Espadium.Wiki.Tests
         private static WikiDbContext NewInMemory()
         {
             var options = new DbContextOptionsBuilder<WikiDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .UseNpgsql("Host=localhost;Database=wiki_test;Username=postgres;Password=postgres")
                 .Options;
             return new WikiDbContext(options);
         }
@@ -27,7 +29,7 @@ namespace Espadium.Wiki.Tests
             db.Pages.Add(new Page { Id = pageId, SpaceId = spaceId, Slug = "home", Title = "Home", Status = PageStatus.Published, CreatedBy = userId, UpdatedBy = userId, CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow });
             await db.SaveChangesAsync();
 
-            var svc = new PermissionService(db);
+            var svc = new Espadium.Wiki.Application.Services.PermissionService(new EfSpaceRepository(db), new EfPageRepository(db), new EfPageRestrictionRepository(db));
             (await svc.HasSpaceRoleAsync(userId, spaceId, SpaceRole.Viewer)).Should().BeTrue();
             (await svc.CanEditPageAsync(userId, pageId)).Should().BeFalse();
         }
@@ -43,7 +45,7 @@ namespace Espadium.Wiki.Tests
             db.Pages.Add(new Page { Id = pageId, SpaceId = spaceId, Slug = "home", Title = "Home", Status = PageStatus.Published, CreatedBy = userId, UpdatedBy = userId, CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow });
             await db.SaveChangesAsync();
 
-            var svc = new PermissionService(db);
+            var svc = new Espadium.Wiki.Application.Services.PermissionService(new EfSpaceRepository(db), new EfPageRepository(db), new EfPageRestrictionRepository(db));
             (await svc.CanEditPageAsync(userId, pageId)).Should().BeTrue();
         }
 
@@ -58,7 +60,7 @@ namespace Espadium.Wiki.Tests
             db.Pages.Add(new Page { Id = pageId, SpaceId = spaceId, Slug = "home", Title = "Home", Status = PageStatus.Published, IsRestricted = true, CreatedBy = userId, UpdatedBy = userId, CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow });
             await db.SaveChangesAsync();
 
-            var svc = new PermissionService(db);
+            var svc = new Espadium.Wiki.Application.Services.PermissionService(new EfSpaceRepository(db), new EfPageRepository(db), new EfPageRestrictionRepository(db));
             (await svc.CanEditPageAsync(userId, pageId)).Should().BeFalse();
 
             db.Set<PageRestriction>().Add(new PageRestriction { PageId = pageId, UserId = userId, CanEdit = true });
@@ -76,7 +78,7 @@ namespace Espadium.Wiki.Tests
             db.Pages.Add(new Page { Id = pageId, SpaceId = spaceId, Slug = "home", Title = "Home", Status = PageStatus.Published, CreatedBy = userId, UpdatedBy = userId, CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow });
             await db.SaveChangesAsync();
 
-            var svc = new PermissionService(db);
+            var svc = new Espadium.Wiki.Application.Services.PermissionService(new EfSpaceRepository(db), new EfPageRepository(db), new EfPageRestrictionRepository(db));
             (await svc.HasSpaceRoleAsync(userId, spaceId, SpaceRole.Viewer)).Should().BeFalse();
             (await svc.CanEditPageAsync(userId, pageId)).Should().BeFalse();
         }
