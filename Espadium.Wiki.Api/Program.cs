@@ -21,6 +21,8 @@ using Microsoft.Extensions.Caching.Distributed;
 using StackExchange.Redis;
 using Espadium.Wiki.Application.Abstractions.Caching;
 using Espadium.Wiki.Infrastructure.Caching;
+using Espadium.Wiki.Application.Abstractions;
+using Espadium.Wiki.Api.Endpoints;
 
 namespace Espadium.Wiki.Api
 {
@@ -176,7 +178,8 @@ namespace Espadium.Wiki.Api
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRestrictionRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRestrictionRepository>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IDateTimeProvider>(_ => new SystemClock());
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IEmailSender, Espadium.Wiki.Infrastructure.Services.EmailSender>();
-            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IFileStorage, Espadium.Wiki.Infrastructure.Services.S3Storage>();
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IFileStorage, Espadium.Wiki.Api.Storage.S3Storage>();
             builder.Services.AddSingleton<ICacheService, CacheService>();
             builder.Services.AddSingleton<IPageCache, PageCache>();
             builder.Services.AddSingleton<IPageTreeCache, PageTreeCache>();

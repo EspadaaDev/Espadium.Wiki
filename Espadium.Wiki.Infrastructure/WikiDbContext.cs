@@ -20,6 +20,7 @@ namespace Espadium.Wiki.Infrastructure
         public DbSet<SpaceMember> SpaceMembers => Set<SpaceMember>();
         public DbSet<Page> Pages => Set<Page>();
         public DbSet<PageRevision> PageRevisions => Set<PageRevision>();
+        public DbSet<Attachment> Attachments => Set<Attachment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -101,6 +102,20 @@ namespace Espadium.Wiki.Infrastructure
                 b.HasKey(r => new { r.PageId, r.UserId });
                 b.ToTable("page_restrictions");
                 b.HasOne(r => r.Page).WithMany().HasForeignKey(r => r.PageId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Attachment>(b =>
+            {
+                b.HasKey(a => a.Id);
+                b.Property(a => a.StorageKey).IsRequired().HasMaxLength(512);
+                b.Property(a => a.Bucket).IsRequired().HasMaxLength(128);
+                b.Property(a => a.Filename).IsRequired().HasMaxLength(256);
+                b.Property(a => a.Mime).IsRequired().HasMaxLength(128);
+                b.Property(a => a.Status).IsRequired().HasMaxLength(32);
+                b.Property(a => a.AvScan).IsRequired().HasMaxLength(32);
+                b.HasIndex(a => a.PageId);
+                b.HasIndex(a => a.StorageKey).IsUnique();
+                b.HasOne(a => a.Page).WithMany(p => p.Attachments).HasForeignKey(a => a.PageId).OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

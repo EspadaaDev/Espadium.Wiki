@@ -25,5 +25,6 @@ namespace Espadium.Wiki.Domain.Entities
         public Page? Parent { get; set; }
         public List<Page> Children { get; set; } = [];
         public List<PageRevision> Revisions { get; set; } = [];
+        public List<Attachment> Attachments { get; set; } = [];
     }
 }
