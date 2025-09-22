@@ -177,7 +177,8 @@ namespace Espadium.Wiki.Api
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRepository>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRestrictionRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRestrictionRepository>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IDateTimeProvider>(_ => new SystemClock());
-            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IEmailSender, Espadium.Wiki.Infrastructure.Services.EmailSender>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IEmailSender, Espadium.Wiki.Api.Notifications.EmailSender>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Notifications.INotificationService, Espadium.Wiki.Api.Notifications.NotificationService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IFileStorage, Espadium.Wiki.Api.Storage.S3Storage>();
             builder.Services.AddSingleton<ICacheService, CacheService>();
@@ -257,7 +258,8 @@ namespace Espadium.Wiki.Api
             auth.MapPost("/register", async (
                 UserManager<User> userManager,
                 HttpContext http,
-                RegisterRequest req) =>
+                RegisterRequest req,
+                Espadium.Wiki.Application.Abstractions.Notifications.INotificationService notify) =>
             {
                 var user = new User { Id = Guid.NewGuid(), UserName = req.Email, Email = req.Email };
                 var result = await userManager.CreateAsync(user, req.Password);
@@ -265,6 +267,10 @@ namespace Espadium.Wiki.Api
                 {
                     return Results.ValidationProblem(result.Errors.ToDictionary(e => e.Code, e => new[] { e.Description }));
                 }
+                var confirmToken = await userManager.GenerateEmailConfirmationTokenAsync(user);
+                var baseUrl = $"{http.Request.Scheme}://{http.Request.Host}";
+                var link = $"{baseUrl}/auth/confirm-email?userId={user.Id}&code={Uri.EscapeDataString(confirmToken)}";
+                await notify.SendConfirmEmailAsync(user.Email!, link);
                 return Results.Ok(new { message = "registered" });
             });
 
@@ -339,12 +345,15 @@ namespace Espadium.Wiki.Api
                 return Results.Ok(new { message = "logged out" });
             }).RequireAuthorization();
 
-            auth.MapPost("/forgot-password", async (UserManager<User> userManager, ForgotPasswordRequest req) =>
+            auth.MapPost("/forgot-password", async (UserManager<User> userManager, ForgotPasswordRequest req, Espadium.Wiki.Application.Abstractions.Notifications.INotificationService notify, HttpContext http) =>
             {
                 var user = await userManager.FindByEmailAsync(req.Email);
                 if (user != null)
                 {
                     var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                    var baseUrl = $"{http.Request.Scheme}://{http.Request.Host}";
+                    var link = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(token)}";
+                    await notify.SendPasswordResetAsync(user.Email!, link);
                 }
                 return Results.Ok(new { message = "ok" });
             });
@@ -442,6 +451,8 @@ namespace Espadium.Wiki.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            Espadium.Wiki.Api.Endpoints.SmtpHealthEndpoint.MapSmtpHealth(app);
 
             app.Run();
         }
