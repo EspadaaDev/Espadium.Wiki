@@ -1,34 +1,75 @@
 
+using Microsoft.AspNetCore.RateLimiting;
+using Serilog;
+using Serilog.Events;
+using System.Threading.RateLimiting;
+
 namespace Espadium.Wiki.Api
 {
     public class Program
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Is(LogEventLevel.Information)
+                .Enrich.FromLogContext()
+                .WriteTo.Console(formatter: new Serilog.Formatting.Json.JsonFormatter())
+                .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddAuthorization();
+            builder.Host.UseSerilog((context, services, configuration) =>
+            {
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .MinimumLevel.Is(LogEventLevel.Information)
+                    .WriteTo.Console(formatter: new Serilog.Formatting.Json.JsonFormatter());
+            });
 
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            builder.Services.AddAuthorization();
             builder.Services.AddOpenApi();
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 60,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            });
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.WithOrigins("http://localhost:3000")
+                          .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
+                          .AllowCredentials()
+                          .AllowAnyHeader();
+                });
+            });
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
             }
 
+            app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
-
+            app.UseCors();
+            app.UseRateLimiter();
             app.UseAuthorization();
 
-            var summaries = new[]
-            {
-                "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-            };
+            app.MapGet("/health/liveness", () => Results.Json(new { status = "ok" }));
+            app.MapGet("/health/readiness", () => Results.Json(new { db = "pending", redis = "pending", s3 = "pending" }));
 
             app.Run();
         }
