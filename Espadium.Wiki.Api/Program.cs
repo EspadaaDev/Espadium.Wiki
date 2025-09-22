@@ -23,6 +23,7 @@ using Espadium.Wiki.Application.Abstractions.Caching;
 using Espadium.Wiki.Infrastructure.Caching;
 using Espadium.Wiki.Application.Abstractions;
 using Espadium.Wiki.Api.Endpoints;
+using Espadium.Wiki.Application.Search;
 
 namespace Espadium.Wiki.Api
 {
@@ -188,6 +189,7 @@ namespace Espadium.Wiki.Api
             builder.Services.AddSingleton<IPageTreeCache, PageTreeCache>();
             builder.Services.AddSingleton<ISpacePermCache, SpacePermCache>();
             builder.Services.AddSingleton<ISettingsCache, SettingsCache>();
+            builder.Services.AddScoped<IPageSearchService, Espadium.Wiki.Infrastructure.Search.PageSearchService>();
 
             WebApplication app;
             try
@@ -455,6 +457,7 @@ namespace Espadium.Wiki.Api
             }
 
             Espadium.Wiki.Api.Endpoints.AdminSettingsEndpoints.MapAdminSettings(app);
+            Espadium.Wiki.Api.Endpoints.SearchEndpoints.MapSearch(app);
             Espadium.Wiki.Api.Endpoints.SmtpHealthEndpoint.MapSmtpHealth(app);
 
             app.Run();
