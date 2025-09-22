@@ -176,6 +176,8 @@ namespace Espadium.Wiki.Api
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.ISpaceRepository, Espadium.Wiki.Infrastructure.Repositories.EfSpaceRepository>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRepository>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Repositories.IPageRestrictionRepository, Espadium.Wiki.Infrastructure.Repositories.EfPageRestrictionRepository>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Settings.ISettingsStore, Espadium.Wiki.Infrastructure.Settings.SettingsStore>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Settings.ISettingsService, Espadium.Wiki.Application.Settings.SettingsService>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IDateTimeProvider>(_ => new SystemClock());
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.IEmailSender, Espadium.Wiki.Api.Notifications.EmailSender>();
             builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Notifications.INotificationService, Espadium.Wiki.Api.Notifications.NotificationService>();
@@ -452,6 +454,7 @@ namespace Espadium.Wiki.Api
                 app.UseSwaggerUI();
             }
 
+            Espadium.Wiki.Api.Endpoints.AdminSettingsEndpoints.MapAdminSettings(app);
             Espadium.Wiki.Api.Endpoints.SmtpHealthEndpoint.MapSmtpHealth(app);
 
             app.Run();

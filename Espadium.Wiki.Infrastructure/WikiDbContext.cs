@@ -21,6 +21,8 @@ namespace Espadium.Wiki.Infrastructure
         public DbSet<Page> Pages => Set<Page>();
         public DbSet<PageRevision> PageRevisions => Set<PageRevision>();
         public DbSet<Attachment> Attachments => Set<Attachment>();
+        public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+        public DbSet<AdminSettingsAudit> AdminSettingsAudits => Set<AdminSettingsAudit>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +118,21 @@ namespace Espadium.Wiki.Infrastructure
                 b.HasIndex(a => a.PageId);
                 b.HasIndex(a => a.StorageKey).IsUnique();
                 b.HasOne(a => a.Page).WithMany(p => p.Attachments).HasForeignKey(a => a.PageId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SystemSetting>(b =>
+            {
+                b.HasKey(s => s.Key);
+                b.Property(s => s.Key).HasMaxLength(150);
+                b.Property(s => s.Value).IsRequired();
+                b.HasIndex(s => s.UpdatedAt);
+            });
+
+            modelBuilder.Entity<AdminSettingsAudit>(b =>
+            {
+                b.HasKey(a => a.Id);
+                b.Property(a => a.Key).HasMaxLength(150);
+                b.HasIndex(a => a.ChangedAt);
             });
         }
     }
