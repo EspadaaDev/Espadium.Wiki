@@ -86,6 +86,7 @@ namespace Espadium.Wiki.Api.Endpoints
                 await storage.CompleteAsync(att.StorageKey, dto.UploadId, dto.Parts.Select(p => (p.PartNumber, p.ETag)));
                 att.Status = "active";
                 await db.SaveChangesAsync();
+                Hangfire.BackgroundJob.Enqueue<Espadium.Wiki.Infrastructure.Jobs.AttachmentPreviewJob>(x => x.HandleAsync(att.Id, CancellationToken.None));
                 return Results.Ok(new { att.Id, att.Filename, att.Mime, att.Size, att.Status });
             }).RequireAuthorization();
 

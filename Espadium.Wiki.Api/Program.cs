@@ -24,6 +24,10 @@ using Espadium.Wiki.Infrastructure.Caching;
 using Espadium.Wiki.Application.Abstractions;
 using Espadium.Wiki.Api.Endpoints;
 using Espadium.Wiki.Application.Search;
+using Espadium.Wiki.Api.Previews;
+using Hangfire;
+using Hangfire.Dashboard;
+using Espadium.Wiki.Api.HangfireAuth;
 
 namespace Espadium.Wiki.Api
 {
@@ -190,6 +194,9 @@ namespace Espadium.Wiki.Api
             builder.Services.AddSingleton<ISpacePermCache, SpacePermCache>();
             builder.Services.AddSingleton<ISettingsCache, SettingsCache>();
             builder.Services.AddScoped<IPageSearchService, Espadium.Wiki.Infrastructure.Search.PageSearchService>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Previews.IImagePreviewGenerator, ImagePreviewGenerator>();
+            builder.Services.AddScoped<Espadium.Wiki.Infrastructure.Jobs.AttachmentPreviewJob>();
+            builder.Services.AddScoped<Espadium.Wiki.Infrastructure.Jobs.CleanupJobs>();
 
             WebApplication app;
             try
@@ -459,6 +466,16 @@ namespace Espadium.Wiki.Api
             Espadium.Wiki.Api.Endpoints.AdminSettingsEndpoints.MapAdminSettings(app);
             Espadium.Wiki.Api.Endpoints.SearchEndpoints.MapSearch(app);
             Espadium.Wiki.Api.Endpoints.SmtpHealthEndpoint.MapSmtpHealth(app);
+
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = new[] { new RoleDashboardAuthorizationFilter("SiteAdmin") }
+            });
+            app.Services.GetRequiredService<IRecurringJobManager>();
+            RecurringJob.AddOrUpdate<Espadium.Wiki.Infrastructure.Jobs.CleanupJobs>(
+                "cleanup-public-links", x => x.CleanupExpiredPublicLinksAsync(CancellationToken.None), "0 * * * *");
+            RecurringJob.AddOrUpdate<Espadium.Wiki.Infrastructure.Jobs.CleanupJobs>(
+                "cleanup-stale-pending-attachments", x => x.CleanupStalePendingAttachmentsAsync(CancellationToken.None), "15 * * * *");
 
             app.Run();
         }
