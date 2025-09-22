@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Espadium.Wiki.Application\Espadium.Wiki.Application.csproj" />
+    <ProjectReference Include="..\Espadium.Wiki.Infrastructure\Espadium.Wiki.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
