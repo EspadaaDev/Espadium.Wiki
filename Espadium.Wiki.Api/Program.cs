@@ -156,6 +156,7 @@ namespace Espadium.Wiki.Api
             builder.Services.AddScoped<TeamService>();
             builder.Services.AddScoped<SpaceService>();
             builder.Services.AddScoped<PageService>();
+            builder.Services.AddScoped<IPermissionService, PermissionService>();
 
             WebApplication app;
             try

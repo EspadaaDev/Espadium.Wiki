@@ -83,6 +83,7 @@ namespace Espadium.Wiki.Infrastructure
                 b.Property(p => p.Slug).IsRequired().HasMaxLength(200);
                 b.Property(p => p.Title).IsRequired().HasMaxLength(500);
                 b.Property(p => p.Status).HasConversion<string>();
+                b.Property(p => p.IsRestricted).HasDefaultValue(false);
                 b.HasIndex(p => new { p.SpaceId, p.Slug }).IsUnique();
                 b.HasOne(p => p.Parent).WithMany(p => p.Children).HasForeignKey(p => p.ParentId).OnDelete(DeleteBehavior.Restrict);
                 b.HasMany(p => p.Revisions).WithOne(pr => pr.Page).HasForeignKey(pr => pr.PageId).OnDelete(DeleteBehavior.Cascade);
@@ -93,6 +94,13 @@ namespace Espadium.Wiki.Infrastructure
                 b.HasKey(pr => pr.Id);
                 b.Property(pr => pr.SnapshotJson).IsRequired();
                 b.HasIndex(pr => new { pr.PageId, pr.RevisionNo }).IsUnique();
+            });
+
+            modelBuilder.Entity<PageRestriction>(b =>
+            {
+                b.HasKey(r => new { r.PageId, r.UserId });
+                b.ToTable("page_restrictions");
+                b.HasOne(r => r.Page).WithMany().HasForeignKey(r => r.PageId).OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
