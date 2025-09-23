@@ -52,7 +52,10 @@ namespace Espadium.Wiki.Api
                     .WriteTo.Console(formatter: new Serilog.Formatting.Json.JsonFormatter());
             });
 
-            builder.Services.AddAuthorization();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("SiteAdminOnly", p => p.RequireRole("SiteAdmin"));
+            });
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen(c =>
             {
@@ -194,7 +197,7 @@ namespace Espadium.Wiki.Api
             builder.Services.AddSingleton<ISpacePermCache, SpacePermCache>();
             builder.Services.AddSingleton<ISettingsCache, SettingsCache>();
             builder.Services.AddScoped<IPageSearchService, Espadium.Wiki.Infrastructure.Search.PageSearchService>();
-            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Previews.IImagePreviewGenerator, ImagePreviewGenerator>();
+            builder.Services.AddScoped<Espadium.Wiki.Application.Abstractions.Previews.IImagePreviewGenerator, Espadium.Wiki.Api.Previews.NoOpImagePreviewGenerator>();
             builder.Services.AddScoped<Espadium.Wiki.Infrastructure.Jobs.AttachmentPreviewJob>();
             builder.Services.AddScoped<Espadium.Wiki.Infrastructure.Jobs.CleanupJobs>();
 
@@ -263,7 +266,7 @@ namespace Espadium.Wiki.Api
             app.MapGet("/health/liveness", () => Results.Json(new { status = "ok" }));
             app.MapGet("/health/readiness", () => Results.Json(new { db = "pending", redis = "pending", s3 = "pending" }));
 
-            var auth = app.MapGroup("/auth");
+            var auth = app.MapGroup("/api/auth");
             auth.WithOpenApi().WithTags("Auth");
 
             auth.MapPost("/register", async (
@@ -392,7 +395,7 @@ namespace Espadium.Wiki.Api
                 return result.Succeeded ? Results.Ok(new { message = "ok" }) : Results.BadRequest(result.Errors);
             });
 
-            var teams = app.MapGroup("/teams").RequireAuthorization().WithOpenApi().WithTags("Teams");
+            var teams = app.MapGroup("/api/teams").RequireAuthorization().WithOpenApi().WithTags("Teams");
             teams.MapGet("/", async (TeamService service) => await service.GetTeamsAsync());
             teams.MapGet("/{id:guid}", async (TeamService service, Guid id) => 
                 await service.GetTeamAsync(id) is { } team ? Results.Ok(team) : Results.NotFound());
@@ -407,7 +410,7 @@ namespace Espadium.Wiki.Api
             teams.MapDelete("/{id:guid}", async (TeamService service, Guid id) =>
                 await service.DeleteTeamAsync(id) ? Results.NoContent() : Results.NotFound());
 
-            var spaces = app.MapGroup("/spaces").RequireAuthorization().WithOpenApi().WithTags("Spaces");
+            var spaces = app.MapGroup("/api/spaces").RequireAuthorization().WithOpenApi().WithTags("Spaces");
             spaces.MapGet("/", async (SpaceService service) => await service.GetSpacesAsync());
             spaces.MapGet("/{id:guid}", async (SpaceService service, Guid id) =>
                 await service.GetSpaceAsync(id) is { } space ? Results.Ok(space) : Results.NotFound());
@@ -424,7 +427,7 @@ namespace Espadium.Wiki.Api
             spaces.MapPost("/{id:guid}/members", async (SpaceService service, Guid id, Espadium.Wiki.Application.DTOs.AddSpaceMemberRequest req) =>
                 await service.AddMemberAsync(id, req) ? Results.Ok() : Results.Conflict());
 
-            var pages = app.MapGroup("/pages").RequireAuthorization().WithOpenApi().WithTags("Pages");
+            var pages = app.MapGroup("/api/pages").RequireAuthorization().WithOpenApi().WithTags("Pages");
             pages.MapGet("/", async (PageService service, Guid? spaceId) => await service.GetPagesAsync(spaceId));
             pages.MapGet("/{id:guid}", async (PageService service, Guid id) =>
                 await service.GetPageAsync(id) is { } page ? Results.Ok(page) : Results.NotFound());
@@ -468,6 +471,9 @@ namespace Espadium.Wiki.Api
             Espadium.Wiki.Api.Endpoints.PublicLinksEndpoints.MapPublicLinks(app);
             Espadium.Wiki.Api.Endpoints.SearchEndpoints.MapSearch(app);
             Espadium.Wiki.Api.Endpoints.SmtpHealthEndpoint.MapSmtpHealth(app);
+            Espadium.Wiki.Api.Endpoints.HealthSummaryEndpoint.MapHealthSummary(app);
+            Espadium.Wiki.Api.Endpoints.PageTreeEndpoints.MapPageTree(app);
+            Espadium.Wiki.Api.Endpoints.AttachmentsEndpoints.MapAttachments(app);
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
