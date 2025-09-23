@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: [ "5432:5432" ]
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+  redis:
+    image: redis:7
+    ports: [ "6379:6379" ]
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3__ACCESSKEY}
+      MINIO_ROOT_PASSWORD: ${S3__SECRETKEY}
+    ports: [ "9000:9000", "9001:9001" ]
+    volumes: [ "minio-data:/data" ]
+  api:
+    build: ./Espadium.Wiki.Api
+    environment:
+      ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+      ConnectionStrings__Default: ${CONNECTIONSTRINGS__DEFAULT}
+      Redis__Configuration: ${REDIS__CONFIGURATION}
+      S3__Endpoint: ${S3__ENDPOINT}
+      S3__Bucket: ${S3__BUCKET}
+      S3__AccessKey: ${S3__ACCESSKEY}
+      S3__SecretKey: ${S3__SECRETKEY}
+      S3__UseSsl: ${S3__USESSL}
+    depends_on: [ postgres, redis, minio ]
+  web:
+    build: ./Espadium.Wiki.Web
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    depends_on: [ api ]
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports: [ "80:80" ]
+    depends_on: [ api, web ]
+volumes:
+  pgdata: {}
+  minio-data: {}
+

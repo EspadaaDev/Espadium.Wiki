@@ -23,6 +23,7 @@ namespace Espadium.Wiki.Infrastructure
         public DbSet<Attachment> Attachments => Set<Attachment>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
         public DbSet<AdminSettingsAudit> AdminSettingsAudits => Set<AdminSettingsAudit>();
+        public DbSet<PublicLink> PublicLinks => Set<PublicLink>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -133,6 +134,14 @@ namespace Espadium.Wiki.Infrastructure
                 b.HasKey(a => a.Id);
                 b.Property(a => a.Key).HasMaxLength(150);
                 b.HasIndex(a => a.ChangedAt);
+            });
+
+            modelBuilder.Entity<PublicLink>(b =>
+            {
+                b.HasKey(p => p.Id);
+                b.Property(p => p.Token).IsRequired().HasMaxLength(200);
+                b.HasIndex(p => p.Token).IsUnique();
+                b.HasIndex(p => p.PageId);
             });
         }
     }

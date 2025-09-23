@@ -16,6 +16,7 @@ namespace Espadium.Wiki.Domain.Entities
         public string Title { get; set; } = string.Empty;
         public PageStatus Status { get; set; }
         public bool IsRestricted { get; set; }
+        public string? SnapshotJson { get; set; }
         public Guid CreatedBy { get; set; }
         public Guid UpdatedBy { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

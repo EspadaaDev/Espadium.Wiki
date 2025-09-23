@@ -464,6 +464,8 @@ namespace Espadium.Wiki.Api
             }
 
             Espadium.Wiki.Api.Endpoints.AdminSettingsEndpoints.MapAdminSettings(app);
+            Espadium.Wiki.Api.Endpoints.RevisionsEndpoints.MapRevisions(app);
+            Espadium.Wiki.Api.Endpoints.PublicLinksEndpoints.MapPublicLinks(app);
             Espadium.Wiki.Api.Endpoints.SearchEndpoints.MapSearch(app);
             Espadium.Wiki.Api.Endpoints.SmtpHealthEndpoint.MapSmtpHealth(app);
 
