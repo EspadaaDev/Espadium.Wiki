@@ -22,6 +22,7 @@ services:
       dockerfile: Espadium.Wiki.Api/Dockerfile
     environment:
       ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+      ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: ${CONNECTIONSTRINGS__DEFAULT}
       Redis__Configuration: ${REDIS__CONFIGURATION}
       S3__Endpoint: ${S3__ENDPOINT}

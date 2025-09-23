@@ -1,6 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 
 export default function EditSimple(){
@@ -22,8 +23,8 @@ export default function EditSimple(){
     <input className="w-full border rounded p-2" value={title} onChange={e=>setTitle(e.target.value)} />
     <textarea className="w-full border rounded p-2 h-80 font-mono" value={snapshot} onChange={e=>setSnapshot(e.target.value)} />
     <div className="flex gap-2">
-      <button onClick={save} className="px-3 py-1 border rounded hover:bg-slate-100">Сохранить</button>
-      <a href={`/pages/${pageId}`} className="px-3 py-1 border rounded hover:bg-slate-100">Отмена</a>
+      <button onClick={save} className="px-3 py-1 border border-sky-200 text-sky-700 rounded hover:bg-sky-50">Сохранить</button>
+      <Link href={`/pages/${pageId}`} className="px-3 py-1 border border-sky-200 text-sky-700 rounded hover:bg-sky-50">Отмена</Link>
     </div>
   </div>;
 }
