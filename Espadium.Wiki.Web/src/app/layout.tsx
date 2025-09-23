@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, useAuth } from "@/lib/auth-store";
-import { Topbar } from "@/components/topbar";
-import { wireAuthAccessors } from "@/lib/api";
+import { AuthProvider } from "@/lib/auth-store";
+import { AppShell } from "@/components/app-shell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,26 +24,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const Shell = ({ children }: { children: React.ReactNode }) => {
-    const { state, clear } = useAuth();
-    wireAuthAccessors(() => state.accessToken, clear);
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Topbar onLogout={clear} />
-        <div className="flex-1 grid grid-cols-[16rem_1fr]">
-          {/* sidebar slot is per-page */}
-          {children}
-        </div>
-      </div>
-    );
-  };
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <Shell>{children}</Shell>
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>

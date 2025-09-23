@@ -2,6 +2,7 @@
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { apiFetch } from "@/lib/api";
+import Link from "next/link";
 
 export default function PageView(){
   const { pageId } = useParams<{pageId:string}>();
@@ -10,7 +11,7 @@ export default function PageView(){
   return <div className="p-4 space-y-4">
     <h1 className="text-2xl font-semibold">{data.title}</h1>
     <pre className="text-sm p-3 border rounded bg-slate-50 overflow-auto">{data.snapshotJson || "(пусто)"}</pre>
-    <a className="text-blue-600 hover:underline" href={`/pages/${pageId}/edit`}>Редактировать (простым JSON)</a>
+    <Link className="text-blue-600 hover:underline" href={`/pages/${pageId}/edit`}>Редактировать (простым JSON)</Link>
   </div>;
 }
 
