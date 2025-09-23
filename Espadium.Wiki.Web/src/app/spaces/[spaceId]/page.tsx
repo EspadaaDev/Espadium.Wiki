@@ -1,7 +1,7 @@
 "use client";
 import { useParams } from "next/navigation";
-import { Sidebar } from "@/src/components/sidebar";
-import { PageTree } from "@/src/components/page-tree";
+import { Sidebar } from "@/components/sidebar";
+import { PageTree } from "@/components/page-tree";
 
 export default function SpacePage(){
   const { spaceId } = useParams<{spaceId:string}>();

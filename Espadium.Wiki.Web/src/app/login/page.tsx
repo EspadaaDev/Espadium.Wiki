@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/src/lib/api";
-import { useAuth } from "@/src/lib/auth-store";
+import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/lib/auth-store";
 
 export default function LoginPage() {
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [err,setErr]=useState<string|null>(null);

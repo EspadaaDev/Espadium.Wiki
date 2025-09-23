@@ -2,13 +2,13 @@
 import useSWR from 'swr';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { apiFetch } from '@/src/lib/api';
+import { apiFetch } from '@/lib/api';
 import { useState } from 'react';
 
 type Node = { id: string; title: string; children?: Node[] };
 
 export function PageTree({ spaceId }: { spaceId: string }) {
-  const { data } = useSWR<Node[]>(spaceId ? `/spaces/${spaceId}/pages/tree` : null, (url) => apiFetch(url).then(r => r.json()));
+  const { data } = useSWR<Node[]>(spaceId ? `/spaces/${spaceId}/pages/tree` : null, (url: string) => apiFetch(url).then((r: Response) => r.json()));
   if (!spaceId) return null;
   return (
     <div className="p-2 text-sm">

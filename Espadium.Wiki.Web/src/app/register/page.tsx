@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { apiFetch } from "@/src/lib/api";
+import { apiFetch } from "@/lib/api";
 
 export default function RegisterPage() {
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [ok,setOk]=useState(false);

@@ -1,12 +1,12 @@
 "use client";
 import useSWR from 'swr';
 import Link from 'next/link';
-import { apiFetch } from '@/src/lib/api';
+import { apiFetch } from '@/lib/api';
 
 type Space = { id: string; key: string; name: string };
 
 export function Sidebar({ activeId }: { activeId?: string }) {
-  const { data } = useSWR<Space[]>("/spaces", (url) => apiFetch("/spaces").then(r => r.json()));
+  const { data } = useSWR<Space[]>("/spaces", (_url: string) => apiFetch("/spaces").then((r: Response) => r.json()));
   return (
     <div className="w-64 border-r bg-slate-50 h-[calc(100vh-3rem)] overflow-y-auto p-2 text-sm">
       <div className="mb-2 px-2 text-slate-500 uppercase">Spaces</div>

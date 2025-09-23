@@ -28,6 +28,7 @@ using Espadium.Wiki.Api.Previews;
 using Hangfire;
 using Hangfire.Dashboard;
 using Espadium.Wiki.Api.HangfireAuth;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Espadium.Wiki.Api
 {
@@ -176,6 +177,14 @@ namespace Espadium.Wiki.Api
                 });
             });
 
+            // Forwarded headers support when running behind reverse proxies (e.g., nginx)
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             builder.Services.AddScoped<TeamService>();
             builder.Services.AddScoped<SpaceService>();
             builder.Services.AddScoped<PageService>();
@@ -219,6 +228,7 @@ namespace Espadium.Wiki.Api
                 app.UseSwaggerUI();
             }
 
+            app.UseForwardedHeaders();
             app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
             app.UseCors();
@@ -484,6 +494,9 @@ namespace Espadium.Wiki.Api
                 "cleanup-public-links", x => x.CleanupExpiredPublicLinksAsync(CancellationToken.None), "0 * * * *");
             RecurringJob.AddOrUpdate<Espadium.Wiki.Infrastructure.Jobs.CleanupJobs>(
                 "cleanup-stale-pending-attachments", x => x.CleanupStalePendingAttachmentsAsync(CancellationToken.None), "15 * * * *");
+
+            // Seed database (roles, admin user, demo space/page)
+            Espadium.Wiki.Api.Seed.SeedData.EnsureAsync(app.Services).GetAwaiter().GetResult();
 
             app.Run();
         }

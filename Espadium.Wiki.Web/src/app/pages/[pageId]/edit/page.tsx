@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/src/lib/api";
+import { apiFetch } from "@/lib/api";
 
 export default function EditSimple(){
   const { pageId } = useParams<{pageId:string}>(); const router = useRouter();
@@ -17,7 +17,7 @@ export default function EditSimple(){
     if(res.ok) router.push(`/pages/${pageId}`);
   }
 
-  if(loading) return <div className="p-4">Загрузка…</div>;
+  if(loading) return <div className="p-4">Загрузка...</div>;
   return <div className="p-4 space-y-3">
     <input className="w-full border rounded p-2" value={title} onChange={e=>setTitle(e.target.value)} />
     <textarea className="w-full border rounded p-2 h-80 font-mono" value={snapshot} onChange={e=>setSnapshot(e.target.value)} />

@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessToken: (t: string) => dispatch({ type: 'set', token: t }),
     clear: () => dispatch({ type: 'clear' })
   }), [state]);
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return React.createElement(Ctx.Provider, { value }, children);
 }
 
 export function useAuth() {

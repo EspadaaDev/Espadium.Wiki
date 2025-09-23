@@ -1,12 +1,12 @@
 "use client";
 import useSWR from "swr";
 import Link from "next/link";
-import { apiFetch } from "@/src/lib/api";
+import { apiFetch } from "@/lib/api";
 
 type Space = { id: string; key: string; name: string };
 
 export default function SpacesPage(){
-  const { data } = useSWR<Space[]>("/spaces", (url)=>apiFetch("/spaces").then(r=>r.json()));
+  const { data } = useSWR<Space[]>("/spaces", (_url: string)=>apiFetch("/spaces").then((r: Response)=>r.json()));
   return <div className="p-4 space-y-2">
     <h1 className="text-xl font-semibold mb-2">Spaces</h1>
     <div className="grid gap-2">
