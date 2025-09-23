@@ -5,6 +5,7 @@ description: |
   — Слои: Domain ← Application ← Infrastructure ← Api (без циклов). Options — Bind + ValidateDataAnnotations + ValidateOnStart.
   — Frontend использует `NEXT_PUBLIC_API_URL=/api`; fetch-обёртка делает 1 refresh-попытку при 401 и редиректит на `/login` при провале.
   — Не оставляй в коде плейсхолдеров (`...`, `…`). Код должен быть законченным и компилируемым.
+  — Вконце НЕ выводи содержимое измененных файлов.
 globs:
   - "Espadium.Wiki.Api/**"
   - "Espadium.Wiki.Application/**"

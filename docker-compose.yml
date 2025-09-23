@@ -17,7 +17,9 @@ services:
     ports: [ "9000:9000", "9001:9001" ]
     volumes: [ "minio-data:/data" ]
   api:
-    build: ./Espadium.Wiki.Api
+    build:
+      context: .
+      dockerfile: Espadium.Wiki.Api/Dockerfile
     environment:
       ASPNETCORE_URLS: ${ASPNETCORE_URLS}
       ConnectionStrings__Default: ${CONNECTIONSTRINGS__DEFAULT}
